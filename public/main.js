@@ -13,12 +13,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const sortOldestButton = document.getElementById('sort-oldest');
   const sortNormalButton = document.getElementById('sort-normal');
   const monthSelect = document.getElementById("month");
+  const timeOptions = ["10:00", "22:00"];
+  const timetwoOptions = ["9:00", "21:00"];
   const appointments = [];
-  const selectedMonth = new Date().getMonth();
-  updateAppointmentList(selectedMonth);
-  updateTotal(selectedMonth);
-  updateCalendar(selectedMonth);
 
+
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1; // JavaScript'te aylar 0-11 arasında olduğu için +1 ekliyoruz
+  const selectedMonth = parseInt(currentMonth) - 1; // Seçilen ayı al ve 0-11 aralığına çevir
+  updateAppointmentList(selectedMonth)
+
+  timeInput.innerHTML = timeOptions.map(option => `<option value="${option}">${option}</option>`).join("");
+  timetwoInput.innerHTML = timetwoOptions.map(option => `<option value="${option}">${option}</option>`).join("");
 
   monthSelect.addEventListener("change", async () => {
     const selectedMonth = parseInt(monthSelect.value) - 1; // Seçilen ayı al ve 0-11 aralığına çevir
@@ -98,9 +104,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isReverseSort) {
       isReverseSort = false;
       isNormalSort = false;
-      sortAppointments();
-      updateAppointmentList();
-      updateCalendar();
+      sortAppointments(selectedMonth);
+      updateAppointmentList(selectedMonth);
+      updateCalendar(selectedMonth);
     }
   });
 
@@ -108,170 +114,127 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isReverseSort) {
       isReverseSort = true;
       isNormalSort = false;
-      sortAppointments();
-      updateAppointmentList();
-      updateCalendar();
+      sortAppointments(selectedMonth);
+      updateAppointmentList(selectedMonth);
+      updateCalendar(selectedMonth);
     }
   });
 
   sortNormalButton.addEventListener("click", () => {
   isNormalSort = true;
   isReverseSort = false;
-  sortNormalAppointments();
-  updateAppointmentList();
-  updateCalendar();
+  sortNormalAppointments(selectedMonth);
+  updateAppointmentList(selectedMonth);
+  updateCalendar(selectedMonth);
 });
 
   
-  addForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+addForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-    const selectedDate = new Date(datetwoInput.value);
-    const selectedDateString = selectedDate.toISOString().split("T")[0];
-    const isDateAlreadyBooked = appointments.some(
-      (appointment) => appointment.datetwo === selectedDateString
-    );
+  const selectedDate = new Date(datetwoInput.value);
+  const selectedDateString = selectedDate.toISOString().split("T")[0];
+  const selectedStartTime = timeInput.value; // Seçilen başlangıç saatini al
+  const selectedEndTime = timetwoInput.value; // Seçilen bitiş saatini al
 
-    if (isDateAlreadyBooked) {
-      const selectedDate = new Date(datetwoInput.value);
-      const selectedDateString = selectedDate.toISOString().split("T")[0];
-      const isDateAlreadyBooked = appointments.some(
-        (appointment) => appointment.datetwo === selectedDateString
-      );
+  const conflictingAppointments = appointments.filter(
+    (appointment) => appointment.datetwo === selectedDateString
+  );
 
-      if (isDateAlreadyBooked) {
-        const existingAppointment = appointments.find(
-          (appointment) => appointment.datetwo === selectedDateString
-        );
-        const existingStartTime = parseInt(
-          existingAppointment.time.split(":")[0]
-        );
-        const existingEndTime = parseInt(
-          existingAppointment.timetwo.split(":")[0]
-        );
-        const selectedStartTime = parseInt(timeInput.value.split(":")[0]);
-        const selectedEndTime = parseInt(timetwoInput.value.split(":")[0]);
-
-        const existingHoursDiff =
-          existingEndTime >= existingStartTime
-            ? existingEndTime - existingStartTime
-            : existingEndTime + (24 - existingStartTime);
-        const selectedHoursDiff =
-          selectedEndTime >= selectedStartTime
-            ? selectedEndTime - selectedStartTime
-            : selectedEndTime + (24 - selectedStartTime);
-
-        if (existingHoursDiff >= 12) {
-          showNotification("هذا التاريخ محجوز, اختر تاريخًا آخر.", "error");
-          console.log(
-            "dateTwo " +
-              existingAppointment.datetwo +
-              " selectedDate " +
-              selectedDateString
-          );
-          return;
-        }
-
-        if (selectedHoursDiff > 12 && existingHoursDiff < 12) {
-          showNotification("هذا الوقت محجوز بالفعل. اختر وقتًا آخر.", "error");
-          return;
-        }
-      } else {
-        const startTime = parseInt(timeInput.value.split(":")[0]);
-        const endTime = parseInt(timetwoInput.value.split(":")[0]);
-        const hoursDiff =
-          endTime >= startTime
-            ? endTime - startTime
-            : endTime + (24 - startTime);
-
-        if (hoursDiff > 12) {
-          showNotification("التاريخ تم استخدامه بالفعل. اختر تاريخًا آخر.", "warning");
-          return;
-        }
-
-        const conflictingAppointment = appointments.find(
-          (appointment) =>
-            appointment.datetwo === selectedDateString &&
-            ((startTime >= parseInt(appointment.time.split(":")[0]) &&
-              startTime < parseInt(appointment.timetwo.split(":")[0])) ||
-              (endTime > parseInt(appointment.time.split(":")[0]) &&
-                endTime <= parseInt(appointment.timetwo.split(":")[0])))
-        );
-
-        if (conflictingAppointment) {
-          const conflictingStartTime = parseInt(
-            conflictingAppointment.time.split(":")[0]
-          );
-          const conflictingEndTime = parseInt(
-            conflictingAppointment.timetwo.split(":")[0]
-          );
-          const conflictingHoursDiff =
-            conflictingEndTime >= conflictingStartTime
-              ? conflictingEndTime - conflictingStartTime
-              : conflictingEndTime + (24 - conflictingStartTime);
-
-          if (conflictingHoursDiff < 12) {
-            showNotification("هذا الوقت محجوز بالفعل. اختر وقتًا آخر.", "warning");
-            return;
+  if (conflictingAppointments.length > 0) {
+    const isDateAlreadyBooked = conflictingAppointments.some(
+      (appointment) => {
+        const isSameStartTime = appointment.time === selectedStartTime;
+        const isSameEndTime = appointment.timetwo === selectedEndTime;
+        const is11HoursAppointment =
+          (appointment.time === "10:00" && appointment.timetwo === "21:00") ||
+          (appointment.time === "22:00" && appointment.timetwo === "9:00");
+  
+        if (is11HoursAppointment) {
+          if (isSameStartTime || isSameEndTime) {
+            return true; // Saatler çakışıyorsa
+          } else {
+            const sameDayAppointments = appointments.filter(
+              (a) => a.datetwo === selectedDateString
+            );
+  
+            const hasAnother11HoursAppointment = sameDayAppointments.some(
+              (a) =>
+                (a.time === "10:00" && a.timetwo === "9:00") ||
+                (a.time === "22:00" && a.timetwo === "21:00")
+            );
+  
+            return hasAnother11HoursAppointment;
           }
-
-          if (
-            conflictingEndTime < startTime ||
-            conflictingStartTime > endTime
-          ) {
-            showNotification("هناك تعارض في المواعيد لهذا اليوم. اختر مواعيد أخرى.", "warning");
-            return;
-          }
+        } else {
+          return (
+            (isSameStartTime && isSameEndTime) ||
+            (appointment.time === "22:00" && appointment.timetwo === "21:00") ||
+            (appointment.time === "10:00" && appointment.timetwo === "9:00")
+          );
         }
       }
-    }
-    const appointment = {
-      dateone: dateoneInput.value,
-      name: nameInput.value,
-      datetwo: datetwoInput.value,
-      number: numberInput.value,
-      time: timeInput.value,
-      timetwo: timetwoInput.value,
-      deposit: depositInput.value,
-      rent: rentInput.value,
-    };
-
-    if (
-      !appointment.dateone ||
-      !appointment.name ||
-      !appointment.datetwo ||
-      !appointment.number ||
-      !appointment.time ||
-      !appointment.timetwo ||
-      !appointment.deposit ||
-      !appointment.rent
-    ) {
-      console.error("Eksik alanlar var");
+    );
+  
+    if (isDateAlreadyBooked) {
+      showNotification(
+        "نفس الوقت في نفس اليوم محجوز بالفعل. اختر وقتًا آخر.",
+        "error"
+      );
       return;
     }
-    try {
-      const response = await fetch("/api/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(appointment),
-      });
-      await response.json();
-      if (response.ok) {
-        appointments.push(appointment);
-        updateAppointmentList();
-        updateCalendar();
-        updateTotal();
-        clearInputs();
-      } else {
-        console.log("hata:", response.data);
-        console.error("Veri eklenemedi");
-      }
-    } catch (error) {
-      console.error("Hata:", error);
+  }
+
+  const appointment = {
+    dateone: dateoneInput.value,
+    name: nameInput.value,
+    datetwo: datetwoInput.value,
+    number: numberInput.value,
+    time: timeInput.value,
+    timetwo: timetwoInput.value,
+    deposit: depositInput.value,
+    rent: rentInput.value,
+  };
+
+  if (
+    !appointment.dateone ||
+    !appointment.name ||
+    !appointment.datetwo ||
+    !appointment.number ||
+    !appointment.time ||
+    !appointment.timetwo ||
+    !appointment.deposit ||
+    !appointment.rent
+  ) {
+    console.error("Eksik alanlar var");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(appointment),
+    });
+    await response.json();
+    if (response.ok) {
+      appointments.push(appointment);
+      const selectedMonth = parseInt(monthSelect.value) - 1;
+      await updateAppointmentList(selectedMonth);
+      await updateCalendar(selectedMonth);
+      await updateTotal(selectedMonth);
+      clearInputs();
+    } else {
+      console.log("hata:", response.data);
+      console.error("Veri eklenemedi");
     }
-  });
+  } catch (error) {
+    console.error("Hata:", error);
+  }
+});
+
 
   async function updateAppointmentList(selectedMonth) {
     appointmentList.innerHTML = "";
@@ -281,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const data = await response.json();
     appointments.length = 0;
     appointments.push(...data);
-    sortAppointments();
+    sortAppointments(selectedMonth);
 
     const sameDayAppointments = new Map(); // Aynı gün içindeki randevuları saklamak için harita
 
@@ -312,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (sameDayAppointments.get(currentDate).length > 1) {
         backgroundColor = "#5DADE2"; // İki randevu olduğunda mavi yap
-      } else if (hoursDiff > 12) {
+      } else if (hoursDiff > 11 || hoursDiff === 23) {
         backgroundColor = "#99E575"; // Yeşil
       } else {
         backgroundColor = "#E9F063"; // Sarı
@@ -345,9 +308,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (deleteResponse.ok) {
             appointments.splice(index, 1);
-            updateAppointmentList();
-            updateCalendar();
-            updateTotal();
+            updateAppointmentList(selectedMonth);
+            updateCalendar(selectedMonth);
+            updateTotal(selectedMonth);
           }
         });
       appointmentList.appendChild(appointmentDiv);
@@ -428,7 +391,7 @@ async function updateCalendar(selectedMonth) {
 
         if (appointmentsOnDay.length > 1) {
           backgroundColor = "#5DADE2"; // İki randevu olduğunda mavi yap
-        } else if (hoursDiff > 12) {
+        } else if (hoursDiff > 11) {
           backgroundColor = "#99E575"; // Yeşil
         } else {
           backgroundColor = "#E9F063"; // Sarı

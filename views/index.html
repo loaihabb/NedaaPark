@@ -28,10 +28,16 @@
         <input id="number" class="number" type="tel" name="number" placeholder="رقم الهاتف" required />
     
         <label for="time">وقت الدخول :</label>
-        <input id="time" class="time" type="time" name="time" placeholder="وقت الدخول" required />
+        <select id="time" class="time" name="time" required>
+          <option value="10:00">10 صباحًا</option>
+          <option value="22:00">10 مساءً</option>
+        </select>
     
         <label for="timetwo">وقت الخروج :</label>
-        <input id="timetwo" class="timetwo" type="time" name="timetwo" placeholder="وقت الخروج" required />
+        <select id="timetwo" class="timetwo" name="timetwo" required>
+          <option value="9:00">9 صباحًا</option>
+          <option value="21:00">9 مساءً</option>
+        </select>
     
         <label for="deposit">العربون :</label>
         <input id="deposit" class="deposit" type="number" name="deposit" placeholder="العربون" required />

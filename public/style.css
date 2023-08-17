@@ -51,6 +51,14 @@ input {
   border-radius: 15px;
   width: 12%;
 }
+.form .time,.timetwo{
+  padding: 15px 30px;
+  margin: 5px;
+  border: 3px solid #ccc;
+  border-radius: 15px;
+  width: 12%;
+}
+
 
 button {
   padding: 15px 40px;
@@ -331,7 +339,16 @@ footer {
   .appointment p {
     margin: 5px;
   }
-
+  .form .time,.timetwo{
+    font-size: small;
+    width: 83%;
+    text-align: right;
+    padding: 10px 20px;
+    margin: 5px;
+    border: 3px solid #ccc;
+    border-radius: 10px;
+    
+  }
   html,
   body {
     width: fit-content;
